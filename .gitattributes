@@ -1,0 +1,19 @@
+# Текст хранится с LF, чтобы gofmt и cargo fmt не ругались на Windows
+# и чтобы диффы не зависели от настроек core.autocrlf.
+*.go    text eol=lf
+*.rs    text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.toml  text eol=lf
+*.mod   text eol=lf
+*.sum   text eol=lf
+*.ini   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.log   text eol=lf
+
+# Бинарные артефакты не должны переписываться
+*.whl   binary
+*.pyd   binary
+*.exe   binary
