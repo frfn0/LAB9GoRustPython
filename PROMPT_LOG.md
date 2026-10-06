@@ -89,4 +89,37 @@
 
 ## Задание 7 (Rust): Python-модуль на Rust через PyO3
 
-_будет дополнено_
+### Промпт
+
+> летс гоу
+
+Ответ на вопрос об установке `maturin`: ставить глобально и делать задание.
+
+### Реализация
+
+- `rust-fastmath/src/lib.rs` — модуль `fastmath` с функциями `sum_squares`,
+  `mean`, `isqrt`; ошибки через `PyValueError` с текстом на русском;
+- `rust-fastmath/Cargo.toml` — `crate-type = ["cdylib", "rlib"]` и
+  `pyo3 = { version = "0.27", features = ["extension-module"] }`;
+- `rust-fastmath/pyproject.toml` — build-backend `maturin`,
+  `[tool.maturin] features = ["pyo3/extension-module"]`;
+- `python/demo_task7.py` — демонстрация вызовов, ошибок и сравнения с Python;
+- `tests/test_fastmath.py` — 14 тестов, `importorskip` с инструкцией по сборке.
+
+### Первая неудачная попытка
+
+`signal.Notify` из задания 2 не сработал на Windows: `CTRL_C_EVENT` нельзя
+адресовать конкретной группе процессов. Решение — `signal.NotifyContext` без
+списка сигналов. Это не ошибка ИИ, а особенность Windows, которую пришлось
+учесть при первой же проверке.
+
+### Проверка
+
+- `cargo build` — успешно, 25.05s
+- `python -m maturin build --release` — wheel `fastmath-0.1.0-cp310-cp310-win_amd64.whl`
+- `pip install --force-reinstall` — установлено, `import fastmath` работает
+- `python -m pytest tests -v` — 20 passed
+- Сравнение с Python на 2 000 000 чисел: Rust 0.0200 сек против Python
+  0.1324 сек, ускорение 6.6x, результаты совпали
+
+Результат: [rust-fastmath/result.txt](rust-fastmath/result.txt)
