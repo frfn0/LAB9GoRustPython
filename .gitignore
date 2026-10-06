@@ -1,0 +1,25 @@
+# Собранные бинарники Go
+*.exe
+go-service/service
+go-calculator/calculator
+
+# Rust
+rust-fastmath/target/
+rust-fastmath/*.pyd
+rust-fastmath/*.dll
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Результаты прогонов (пересоздаются при запуске)
+results/*.log
+
+# Прочее
+.env
