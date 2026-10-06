@@ -26,11 +26,19 @@
 .
 ├── go.mod                  Go-модуль на оба Go-сервиса
 ├── requirements.txt        зависимости Python-части
+├── pytest.ini              настройки тестов (pythonpath = python)
 ├── go-service/             задание 2: HTTP-сервис с фоновой горутиной
+│   ├── main.go
+│   └── result.txt          фактический вывод
 ├── go-calculator/          задание 4: обмен JSON через stdin/stdout
+│   ├── main.go
+│   └── result.txt          фактический вывод
 ├── rust-fastmath/          задание 7: Python-модуль на Rust через PyO3
 ├── python/                 клиенты и демонстрационный сценарий
+│   ├── calculator_client.py
+│   └── demo_task4.py
 ├── tests/                  тесты pytest
+│   └── test_calculator.py
 └── results/                фактический вывод запусков
 ```
 
@@ -96,3 +104,65 @@ curl http://127.0.0.1:8080/stats
 - `signal.NotifyContext` без списка сигналов ловит Ctrl+C и SIGTERM: сервер
   перестаёт принимать соединения, затем `WaitGroup.Wait()` дожидается
   завершения всех горутин — ни одна задача не теряется.
+
+---
+
+### Задание 4 (Go) — передача данных из Python в Go через JSON
+
+Go-бинарь читает один JSON-объект из stdin, считает сумму и сумму квадратов
+и пишет JSON-ответ в stdout. Python запускает его через `subprocess.run`.
+
+**Сборка и запуск:**
+
+```bash
+# собрать бинарь
+go build -o go-calculator/calculator ./go-calculator
+
+# демонстрация из Python
+python python/demo_task4.py
+
+# тесты
+python -m pytest tests -v --cov=calculator_client
+```
+
+**Проверка вручную:**
+
+```bash
+'{"label":"из PowerShell","numbers":[1,2,3,4,5]}' | ./go-calculator/calculator
+```
+
+```json
+{
+  "label": "из PowerShell",
+  "count": 5,
+  "sum_of_squares": 55,
+  "sum": 15
+}
+```
+
+**Фактический вывод демонстрации:**
+
+```
+Пример из методички: [1, 2, 3, 4, 5]
+  ответ Go: {'count': 5, 'sum_of_squares': 55, 'sum': 15}
+
+Структура с меткой, чтобы видеть обмен полями туда и обратно:
+  ответ Go: {'label': 'отчёт за неделю', 'count': 3, 'sum_of_squares': 1400, 'sum': 60}
+  метка вернулась из Go без изменений: 'отчёт за неделю'
+
+Обработка ошибки: пустой массив чисел
+  поймано ожидаемое исключение: калькулятор завершился с кодом 1:
+  ошибка: поле "numbers" должно быть непустым массивом чисел
+```
+
+**Как это работает:**
+
+- на стороне Go — только стандартная библиотека: `json.Decoder` со
+  `DisallowUnknownFields()` читает stdin, `json.Encoder` пишет ответ в stdout;
+- ошибки уходят в stderr с кодом возврата 1, поэтому в stdout всегда только
+  валидный JSON;
+- на стороне Python — `subprocess.run(input=..., text=True, encoding="utf-8")`,
+  поэтому кириллица не портится;
+- `CalculatorError` превращает ненулевой код возврата в исключение Python.
+
+Фактический вывод и результаты тестов: [go-calculator/result.txt](go-calculator/result.txt)
