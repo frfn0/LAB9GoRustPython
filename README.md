@@ -34,11 +34,17 @@
 │   ├── main.go
 │   └── result.txt          фактический вывод
 ├── rust-fastmath/          задание 7: Python-модуль на Rust через PyO3
-├── python/                 клиенты и демонстрационный сценарий
+│   ├── Cargo.toml
+│   ├── pyproject.toml
+│   ├── src/lib.rs
+│   └── result.txt          фактический вывод
+├── python/                 клиенты и демонстрационные сценарии
 │   ├── calculator_client.py
-│   └── demo_task4.py
+│   ├── demo_task4.py
+│   └── demo_task7.py
 ├── tests/                  тесты pytest
-│   └── test_calculator.py
+│   ├── test_calculator.py
+│   └── test_fastmath.py
 └── results/                фактический вывод запусков
 ```
 
@@ -166,3 +172,103 @@ python -m pytest tests -v --cov=calculator_client
 - `CalculatorError` превращает ненулевой код возврата в исключение Python.
 
 Фактический вывод и результаты тестов: [go-calculator/result.txt](go-calculator/result.txt)
+
+---
+
+### Задание 7 (Rust) — Python-модуль на Rust через PyO3
+
+Rust-функции собираются в расширение CPython, поэтому из Python они
+вызываются как обычные функции.
+
+**Сборка и установка модуля:**
+
+```bash
+cd rust-fastmath
+
+# проверить, что Rust-код компилируется
+cargo build
+
+# собрать wheel для текущей версии Python
+python -m maturin build --release
+
+# установить собранный wheel
+pip install --force-reinstall target/wheels/fastmath-*.whl
+```
+
+**Проверка:**
+
+```bash
+python -c "import fastmath; print(fastmath.sum_squares([1, 2, 3, 4, 5]))"
+```
+
+```python
+# полная демонстрация
+python python/demo_task7.py
+```
+
+**Фактический вывод:**
+
+```
+1. Модуль собран на Rust и импортируется в Python
+   fastmath: C:\Python\lib\site-packages\fastmath\__init__.py
+   экспортированные функции: fastmath, isqrt, mean, sum_squares
+
+2. Прямые вызовы из Python
+   fastmath.sum_squares([1, 2, 3, 4, 5]) = 55
+   fastmath.mean([1, 2, 3, 4])          = 2.5
+   fastmath.isqrt(17)                    = 4
+
+3. Ошибки Rust превращаются в исключения Python
+   fastmath.mean([]) -> ValueError: mean(): список чисел не должен быть пустым
+   fastmath.isqrt(-1) -> ValueError: isqrt(): число не должно быть отрицательным, получено -1
+
+4. Сравнение с чистым Python на 2000000 числах
+   Rust:   0.0200 сек, результат 2666664666667000000
+   Python: 0.1324 сек, результат 2666664666667000000
+   результаты совпали: True
+   ускорение Rust: 6.6x
+```
+
+**Тесты:**
+
+```bash
+python -m pytest tests -v
+```
+
+```
+collected 20 items
+
+tests\test_calculator.py ......                                          [ 30%]
+tests\test_fastmath.py ..............                                    [100%]
+
+======================== 20 passed in 1.33s =========================
+```
+
+**Как это работает:**
+
+- `#[pyfunction]` экспортирует функцию в Python, `#[pymodule]` регистрирует
+  модуль `fastmath`;
+- `Vec<i64>` на границе FFI превращается в обычный Python-список, `i64` — в `int`;
+- ошибки `PyValueError` конвертируются в исключения Python, поэтому вызовы
+  неотличимы от обычных функций;
+- `crate-type = ["cdylib"]` и фича `pyo3/extension-module` обязательны: без них
+  maturin не соберёт `.pyd`, который импортируется в Python.
+
+Фактический вывод: [rust-fastmath/result.txt](rust-fastmath/result.txt)
+
+---
+
+## Общие команды
+
+```bash
+# сборка и проверка Go-части
+go build ./...
+go vet ./...
+
+# демонстрации
+python python/demo_task4.py
+python python/demo_task7.py
+
+# все тесты
+python -m pytest tests -v
+```
