@@ -61,7 +61,29 @@
 
 ## Задание 4 (Go): передача данных из Python в Go через JSON
 
-_будет дополнено_
+### Промпт
+
+> го
+
+Согласование перехода к заданию 4 после задания 2.
+
+### Реализация
+
+- `go-calculator/main.go` — Go-бинарь на стандартной библиотеке: читает один
+  JSON-объект из stdin, возвращает в stdout `count`, `sum`, `sum_of_squares`
+  и переданную метку обратно; ошибки — в stderr с кодом 1;
+- `python/calculator_client.py` — клиент: `subprocess.run` с `text=True` и
+  `encoding="utf-8"`, ошибки Go превращаются в `CalculatorError`;
+- `python/demo_task4.py` — демонстрация, включая ошибочный случай;
+- `tests/test_calculator.py` + `pytest.ini` — 6 тестов, покрытие клиента 90%.
+
+### Проверка
+
+`go vet ./go-calculator` и `go build` — без ошибок, `gofmt` чистый.
+`python -m pytest tests -v --cov=calculator_client` — 6 passed, 90%.
+Кириллица в поле `label` корректно проходит туда и обратно.
+
+Результат: [go-calculator/result.txt](go-calculator/result.txt)
 
 ---
 
