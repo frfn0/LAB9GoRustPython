@@ -1,0 +1,13 @@
+[package]
+name = "fastmath"
+version = "0.1.0"
+edition = "2024"
+description = "Быстрые математические функции на Rust, доступные из Python через PyO3"
+
+[lib]
+name = "fastmath"
+# cdylib нужен, чтобы maturin собрал расширение CPython (.pyd)
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.27", features = ["extension-module"] }

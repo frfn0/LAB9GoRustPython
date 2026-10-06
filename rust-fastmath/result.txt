@@ -1,0 +1,65 @@
+Задание 7. Python-модуль на Rust через PyO3: фактический вывод
+=============================================================
+
+Дата проверки: 2026-10-06
+Инструменты: rustc 1.94.1 (x86_64-pc-windows-msvc), maturin 1.15.0, CPython 3.10
+Запуск демонстрации: python python/demo_task7.py
+
+1. Сборка модуля
+----------------
+> cd rust-fastmath
+> cargo build
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.05s
+
+> python -m maturin build --release
+    Finished `release` profile [optimized] target(s) in 14.26s
+    Built wheel for CPython 3.10 to target\wheels\fastmath-0.1.0-cp310-cp310-win_amd64.whl
+
+> pip install --force-reinstall target\wheels\fastmath-0.1.0-cp310-cp310-win_amd64.whl
+Successfully installed fastmath-0.1.0
+
+2. Импорт и вызов из Python
+----------------------------
+Модуль fastmath собран на Rust и импортируется в Python
+   fastmath: C:\Python\lib\site-packages\fastmath\__init__.py
+   экспортированные функции: fastmath, isqrt, mean, sum_squares
+
+fastmath.sum_squares([1, 2, 3, 4, 5]) = 55
+fastmath.mean([1, 2, 3, 4])          = 2.5
+fastmath.isqrt(17)                    = 4
+
+3. Ошибки Rust становятся исключениями Python
+---------------------------------------------
+fastmath.mean([]) -> ValueError: mean(): список чисел не должен быть пустым
+fastmath.isqrt(-1) -> ValueError: isqrt(): число не должно быть отрицательным, получено -1
+
+4. Сравнение с чистым Python на 2000000 числах
+-----------------------------------------------
+   Rust:   0.0200 сек, результат 2666664666667000000
+   Python: 0.1324 сек, результат 2666664666667000000
+   результаты совпали: True
+   ускорение Rust: 6.6x
+
+5. Тесты
+--------
+> python -m pytest tests -v
+collected 20 items
+
+tests\test_calculator.py ......                                          [ 30%]
+tests\test_fastmath.py ..............                                    [100%]
+
+======================== 20 passed in 1.33s =========================
+
+Как устроена связка Rust и Python
+---------------------------------
+Rust                                        Python
+----                                        ------
+#[pyfunction] sum_squares(Vec<i64>)  --->    fastmath.sum_squares([1, 2, 3])
+m.add_function(wrap_pyfunction!(..))          функция в модуле fastmath
+PyValueError::new_err(...)            --->    ValueError с текстом на русском
+#[pymodule] fn fastmath(m)            --->    import fastmath
+crate-type = ["cdylib"] + maturin    --->    fastmath.cp310-win_amd64.pyd
+
+Ключевой момент: Vec<i64> на границе FFI превращается в обычный Python-список,
+i64 - в int, а ошибки Rust автоматически конвертируются в исключения Python,
+поэтому вызовы неотличимы от обычных функций.
